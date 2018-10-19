@@ -77,7 +77,8 @@ void LT8920::begin()
 
     }
   //setup
-
+  SPI.begin();
+  
   writeRegister(0, 0x6fe0);
   writeRegister(1, 0x5681);
   writeRegister(2, 0x6617);
