@@ -77,11 +77,12 @@ void LT8920::begin()
   }
   //setup
   SPI.begin();
+  SPI.setDataMode(1);
   SPI.setBitOrder(MSBFIRST);
   SPI.setClockDivider(SPI_CLOCK_DIV64);
   delay(500);
-  id1 = readRegister(30);
   id2 = readRegister(31);
+  id1 = readRegister(30);
   writeRegister(0, 0x6fe0);
   writeRegister(1, 0x5681);
   writeRegister(2, 0x6617);
@@ -115,7 +116,7 @@ void LT8920::begin()
 
   writeRegister(40, 0x4401); //max allowed error bits = 0 (01 = 0 error bits)
   writeRegister(R_PACKETCONFIG,
-                PACKETCONFIG_CRC_ON |
+                PACKETCONFIG_CRC_ON |PACKETCONFIG_AUTO_ACK|PACKETCONFIG_PKT_FIFO_POLARITY|
                     PACKETCONFIG_PACK_LEN_ENABLE |
                     PACKETCONFIG_FW_TERM_TX);
 
