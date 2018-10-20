@@ -116,7 +116,7 @@ void LT8920::begin()
 
   writeRegister(40, 0x4401); //max allowed error bits = 0 (01 = 0 error bits)
   writeRegister(R_PACKETCONFIG,
-                PACKETCONFIG_CRC_ON |PACKETCONFIG_AUTO_ACK|PACKETCONFIG_PKT_FIFO_POLARITY|
+                PACKETCONFIG_CRC_ON |PACKETCONFIG_AUTO_ACK|
                     PACKETCONFIG_PACK_LEN_ENABLE |
                     PACKETCONFIG_FW_TERM_TX);
 
