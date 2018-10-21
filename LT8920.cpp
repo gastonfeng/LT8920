@@ -52,12 +52,7 @@ SPI spi(PA_7, PA_6, PA_5);
 void LT8920::dump_register(uint8_t reg)
 {
   uint16_t r = readRegister(reg);
-#ifndef __MBED__
-  Serial.print("reg: ");
-  Serial.print(reg);
-  Serial.print(" , value: ");
-  Serial.printf(r, HEX);
-#endif
+  printf("reg: 0x%x , value: 0x%x",reg,r);
 }
 
 LT8920::LT8920(const uint8_t cs, const uint8_t pkt, const uint8_t rst)
@@ -257,12 +252,12 @@ void LT8920::sleep()
 void LT8920::whatsUp(Stream &stream)
 {
   uint16_t mode = readRegister(R_CHANNEL);
-  stream.printf("\nTx_EN=");
-  stream.printf("0x%x", (mode & _BV(CHANNEL_TX_BIT)) != false);
-  stream.printf("Rx_EN=");
-  stream.printf("0x%x", (mode & _BV(CHANNEL_RX_BIT)) != false);
-  stream.printf("Channel=");
-  stream.printf("0x%x", mode & CHANNEL_MASK);
+  printf("\nTx_EN=");
+  printf("0x%x", (mode & _BV(CHANNEL_TX_BIT)) != false);
+  printf("Rx_EN=");
+  printf("0x%x", (mode & _BV(CHANNEL_RX_BIT)) != false);
+  printf("Channel=");
+  printf("0x%x", mode & CHANNEL_MASK);
 
   //read the status register.
   uint16_t state = readRegister(R_STATUS);
@@ -273,22 +268,22 @@ void LT8920::whatsUp(Stream &stream)
   bool pkt_flag = state & _BV(6);
   bool fifo_flag = state & _BV(5);
 
-  stream.printf("CRC=");
-  stream.printf("0x%x", crc_error);
-  stream.printf("FEC=");
-  stream.printf("0x%x", fec23_error);
-  stream.printf("FRAMER_ST=");
-  stream.printf("0x%x", framer_st);
-  stream.printf("PKT=");
-  stream.printf("0x%x", pkt_flag);
-  stream.printf("FIFO=");
-  stream.printf("0x%x", fifo_flag);
+  printf("CRC=");
+  printf("0x%x", crc_error);
+  printf("FEC=");
+  printf("0x%x", fec23_error);
+  printf("FRAMER_ST=");
+  printf("0x%x", framer_st);
+  printf("PKT=");
+  printf("0x%x", pkt_flag);
+  printf("FIFO=");
+  printf("0x%x", fifo_flag);
 
   uint16_t fifo = readRegister(R_FIFO_CONTROL);
-  stream.printf("FIFO_WR_PTR=");
-  stream.printf("0x%x", (fifo >> 8) & 0b111111);
-  stream.printf("FIFO_RD_PTR=");
-  stream.printf("0x%x", fifo & 0b111111);
+  printf("FIFO_WR_PTR=");
+  printf("0x%x", (fifo >> 8) & 0b111111);
+  printf("FIFO_RD_PTR=");
+  printf("0x%x", fifo & 0b111111);
 }
 
 bool LT8920::available()
