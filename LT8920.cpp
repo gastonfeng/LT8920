@@ -1,5 +1,11 @@
-#include <SPI.h>
+#include <spi.h>
 #include "LT8920.h"
+#if __MBED__
+SPI spi(PA_7, PA_6, PA_5);
+#define transfer write
+#else
+#define spi SPI
+#endif
 
 #define REGISTER_READ 0b10000000  //bin
 #define REGISTER_WRITE 0b00000000 //bin
@@ -46,23 +52,25 @@
 void LT8920::dump_register(uint8_t reg)
 {
   uint16_t r = readRegister(reg);
+#ifndef __MBED__
   Serial.print("reg: ");
   Serial.print(reg);
   Serial.print(" , value: ");
-  Serial.println(r, HEX);
+  Serial.printf(r, HEX);
+#endif
 }
 
 LT8920::LT8920(const uint8_t cs, const uint8_t pkt, const uint8_t rst)
 {
+#ifndef __MBED__
   _pin_chipselect = cs;
   _pin_pktflag = pkt;
   _pin_reset = rst;
   _channel = DEFAULT_CHANNEL;
-
   pinMode(_pin_chipselect, OUTPUT);
   pinMode(_pin_pktflag, INPUT);
   pinMode(_pin_reset, OUTPUT);
-
+#endif
   digitalWrite(_pin_chipselect, HIGH);
 }
 
@@ -75,11 +83,16 @@ void LT8920::begin()
     digitalWrite(_pin_reset, HIGH);
     delay(200);
   }
-  //setup
-  SPI.begin();
-  SPI.setDataMode(1);
-  SPI.setBitOrder(MSBFIRST);
-  SPI.setClockDivider(SPI_CLOCK_DIV64);
+//setup
+#if __MBED__
+  spi.format(8, 1);
+  spi.frequency(1000000);
+#else
+  spi.begin();
+  spi.setDataMode(1);
+  spi.setBitOrder(MSBFIRST);
+  spi.setClockDivider(SPI_CLOCK_DIV64);
+#endif
   delay(500);
   id2 = readRegister(31);
   id1 = readRegister(30);
@@ -116,7 +129,7 @@ void LT8920::begin()
 
   writeRegister(40, 0x4401); //max allowed error bits = 0 (01 = 0 error bits)
   writeRegister(R_PACKETCONFIG,
-                PACKETCONFIG_CRC_ON |PACKETCONFIG_AUTO_ACK|
+                PACKETCONFIG_CRC_ON | PACKETCONFIG_AUTO_ACK |
                     PACKETCONFIG_PACK_LEN_ENABLE |
                     PACKETCONFIG_FW_TERM_TX);
 
@@ -198,15 +211,15 @@ LT8920::DataRate LT8920::getDataRate()
 uint16_t LT8920::readRegister(uint8_t reg)
 {
   digitalWrite(_pin_chipselect, LOW);
-  SPI.transfer(REGISTER_READ | (REGISTER_MASK & reg));
-  uint8_t high = SPI.transfer(0x00);
-  uint8_t low = SPI.transfer(0x00);
+  spi.transfer(REGISTER_READ | (REGISTER_MASK & reg));
+  uint8_t high = spi.transfer(0x00);
+  uint8_t low = spi.transfer(0x00);
 
   digitalWrite(_pin_chipselect, HIGH);
 
   // Serial.print(reg);
   // Serial.print(" = ");
-  // Serial.println(high << 8 | low);
+  // Serial.printf(high << 8 | low);
 
   return (high << 8 | low);
 }
@@ -224,12 +237,12 @@ uint8_t LT8920::writeRegister2(uint8_t reg, uint8_t high, uint8_t low)
 
   // char sbuf[32];
   // sprintf_P(sbuf, PSTR("%d => %02x%02x"), reg, high, low);
-  // Serial.println(sbuf);
+  // Serial.printf(sbuf);
 
   digitalWrite(_pin_chipselect, LOW);
-  uint8_t result = SPI.transfer(REGISTER_WRITE | (REGISTER_MASK & reg));
-  SPI.transfer(high);
-  SPI.transfer(low);
+  uint8_t result = spi.transfer(REGISTER_WRITE | (REGISTER_MASK & reg));
+  spi.transfer(high);
+  spi.transfer(low);
 
   digitalWrite(_pin_chipselect, HIGH);
   return result;
@@ -244,12 +257,12 @@ void LT8920::sleep()
 void LT8920::whatsUp(Stream &stream)
 {
   uint16_t mode = readRegister(R_CHANNEL);
-  stream.print("\nTx_EN=");
-  stream.println((mode & _BV(CHANNEL_TX_BIT)) != false);
-  stream.print("Rx_EN=");
-  stream.println((mode & _BV(CHANNEL_RX_BIT)) != false);
-  stream.print("Channel=");
-  stream.println(mode & CHANNEL_MASK);
+  stream.printf("\nTx_EN=");
+  stream.printf("0x%x", (mode & _BV(CHANNEL_TX_BIT)) != false);
+  stream.printf("Rx_EN=");
+  stream.printf("0x%x", (mode & _BV(CHANNEL_RX_BIT)) != false);
+  stream.printf("Channel=");
+  stream.printf("0x%x", mode & CHANNEL_MASK);
 
   //read the status register.
   uint16_t state = readRegister(R_STATUS);
@@ -260,22 +273,22 @@ void LT8920::whatsUp(Stream &stream)
   bool pkt_flag = state & _BV(6);
   bool fifo_flag = state & _BV(5);
 
-  stream.print("CRC=");
-  stream.println(crc_error);
-  stream.print("FEC=");
-  stream.println(fec23_error);
-  stream.print("FRAMER_ST=");
-  stream.println(framer_st);
-  stream.print("PKT=");
-  stream.println(pkt_flag);
-  stream.print("FIFO=");
-  stream.println(fifo_flag);
+  stream.printf("CRC=");
+  stream.printf("0x%x", crc_error);
+  stream.printf("FEC=");
+  stream.printf("0x%x", fec23_error);
+  stream.printf("FRAMER_ST=");
+  stream.printf("0x%x", framer_st);
+  stream.printf("PKT=");
+  stream.printf("0x%x", pkt_flag);
+  stream.printf("FIFO=");
+  stream.printf("0x%x", fifo_flag);
 
   uint16_t fifo = readRegister(R_FIFO_CONTROL);
-  stream.print("FIFO_WR_PTR=");
-  stream.println((fifo >> 8) & 0b111111);
-  stream.print("FIFO_RD_PTR=");
-  stream.println(fifo & 0b111111);
+  stream.printf("FIFO_WR_PTR=");
+  stream.printf("0x%x", (fifo >> 8) & 0b111111);
+  stream.printf("FIFO_RD_PTR=");
+  stream.printf("0x%x", fifo & 0b111111);
 }
 
 bool LT8920::available()

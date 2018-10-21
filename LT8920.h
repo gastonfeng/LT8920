@@ -8,7 +8,7 @@
 
 #ifndef LT8920_H
 #define LT8920_H
-
+#include<arduino.h>
 class LT8920
 {
 
@@ -26,7 +26,11 @@ public:
 
 private:
   uint8_t _pin_chipselect;
+  #if __MBED__
+  DigitalIn *_pin_pktflag;
+  #else
   uint8_t _pin_pktflag;
+  #endif
   uint8_t _pin_reset;
   uint8_t _channel;
 
