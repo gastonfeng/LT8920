@@ -8,7 +8,7 @@
 
 #ifndef LT8920_H
 #define LT8920_H
-#include<arduino.h>
+#include <arduino.h>
 class LT8920
 {
 
@@ -23,15 +23,22 @@ public:
     LT8920_62KBPS   /** 62 Kbps, only on lt8910 */
   };
   uint16_t id1, id2;
-
+  int index;
 private:
-  uint8_t _pin_chipselect;
-  #if __MBED__
+#if __MBED__
+#ifdef LT8920_USE_INT
+  InterruptIn *_pin_pktflag;
+  void (*rxcb)();
+#else
   DigitalIn *_pin_pktflag;
-  #else
+#endif
+  DigitalOut *_pin_chipselect;
+  DigitalOut *_pin_reset;
+#else
   uint8_t _pin_pktflag;
-  #endif
+  uint8_t _pin_chipselect;
   uint8_t _pin_reset;
+#endif
   uint8_t _channel;
 
 public:
@@ -40,10 +47,16 @@ public:
      * @param pkt PKT_flag input signal pin. Comparable to the NRF24L01+ IRQ pin.
      * @param rst RESET pin. Use 0 to disable.
     */
-  LT8920(const uint8_t cs, const uint8_t pkt, const uint8_t rst);
+  LT8920(const int cs, const int pkt, const int rst);
 
   /** Configures the module for initial use */
   void begin();
+#ifdef LT8920_USE_INT
+  void setRxCb(void (*rcb)())
+  {
+    _pin_pktflag->rise(rcb);
+  }
+#endif
 
   /** 设置信道
     * @param channel has significant 7 bits

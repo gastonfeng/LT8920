@@ -52,16 +52,25 @@ SPI spi(PA_7, PA_6, PA_5);
 void LT8920::dump_register(uint8_t reg)
 {
   uint16_t r = readRegister(reg);
-  printf("reg: 0x%x , value: 0x%x",reg,r);
+  printf("reg: 0x%x , value: 0x%x", reg, r);
 }
 
-LT8920::LT8920(const uint8_t cs, const uint8_t pkt, const uint8_t rst)
+LT8920::LT8920(const int cs, const int pkt, const int rst)
 {
-#ifndef __MBED__
+  index = 0;
+  _channel = DEFAULT_CHANNEL;
+#if __MBED__
+  _pin_chipselect = (DigitalOut *)pinMode((PinName)cs, OUTPUT);
+#ifdef LT8920_USE_INT
+  _pin_pktflag = new InterruptIn((PinName)pkt);
+#else
+  _pin_pktflag = (DigitalIn *)pinMode((PinName)pkt, INPUT);
+#endif
+  _pin_reset = (DigitalOut *)pinMode((PinName)rst, OUTPUT);
+#else
   _pin_chipselect = cs;
   _pin_pktflag = pkt;
   _pin_reset = rst;
-  _channel = DEFAULT_CHANNEL;
   pinMode(_pin_chipselect, OUTPUT);
   pinMode(_pin_pktflag, INPUT);
   pinMode(_pin_reset, OUTPUT);
@@ -201,6 +210,7 @@ LT8920::DataRate LT8920::getDataRate()
   case DATARATE_62KBPS:
     return LT8920_62KBPS;
   }
+  return LT8920_62KBPS;
 }
 
 uint16_t LT8920::readRegister(uint8_t reg)
@@ -313,7 +323,7 @@ int LT8920::read(uint8_t *buffer, size_t maxBuffer)
       return -2;
     }
 
-    uint8_t pos;
+    uint8_t pos = 0;
     buffer[pos++] = (data & 0xFF);
     while (pos < packetSize)
     {
@@ -382,7 +392,7 @@ bool LT8920::sendPacket(uint8_t *data, size_t packetSize)
   {
     //do nothing.
   }
-
+  index++;
   return true;
 }
 
