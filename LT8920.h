@@ -24,6 +24,7 @@ public:
   };
   uint16_t id1, id2;
   int index;
+
 private:
 #if __MBED__
 #ifdef LT8920_USE_INT
@@ -54,7 +55,11 @@ public:
 #ifdef LT8920_USE_INT
   void setRxCb(void (*rcb)())
   {
+#if __mbed__
     _pin_pktflag->rise(rcb);
+#else
+    attachInterrupt(_pin_pktflag, rcb, RISING);
+#endif
   }
 #endif
 
