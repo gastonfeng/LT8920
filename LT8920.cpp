@@ -133,7 +133,7 @@ void LT8920::begin()
 
   writeRegister(40, 0x4401); //max allowed error bits = 0 (01 = 0 error bits)
   writeRegister(R_PACKETCONFIG,
-                PACKETCONFIG_CRC_ON | PACKETCONFIG_AUTO_ACK |
+                PACKETCONFIG_CRC_ON | PACKETCONFIG_AUTO_ACK | PACKETCONFIG_PKT_FIFO_POLARITY |
                     PACKETCONFIG_PACK_LEN_ENABLE |
                     PACKETCONFIG_FW_TERM_TX);
 
@@ -368,7 +368,7 @@ bool LT8920::sendPacket(uint8_t *data, size_t packetSize)
   {
     return false;
   }
-
+  _pin_pktflag->disable_irq();
   writeRegister(R_CHANNEL, 0x0000);
   writeRegister(R_FIFO_CONTROL, 0x8000); //flush tx
 
@@ -393,6 +393,7 @@ bool LT8920::sendPacket(uint8_t *data, size_t packetSize)
     //do nothing.
   }
   index++;
+  _pin_pktflag->enable_irq();
   return true;
 }
 
