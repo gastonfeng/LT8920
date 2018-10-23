@@ -55,7 +55,7 @@ public:
 #ifdef LT8920_USE_INT
   void setRxCb(void (*rcb)())
   {
-#if __mbed__
+#if __MBED__
     _pin_pktflag->rise(rcb);
 #else
     attachInterrupt(_pin_pktflag, rcb, RISING);
