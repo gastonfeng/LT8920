@@ -368,7 +368,11 @@ bool LT8920::sendPacket(uint8_t *data, size_t packetSize)
   {
     return false;
   }
+#if __MBED__
   _pin_pktflag->disable_irq();
+#else
+  detachInterrupt(_pin_pktflag);
+#endif
   writeRegister(R_CHANNEL, 0x0000);
   writeRegister(R_FIFO_CONTROL, 0x8000); //flush tx
 
@@ -393,7 +397,11 @@ bool LT8920::sendPacket(uint8_t *data, size_t packetSize)
     //do nothing.
   }
   index++;
+#if __MBED__
   _pin_pktflag->enable_irq();
+#else
+  attachInterrupt(_pin_pktflag, rxcb, RISING);
+#endif
   return true;
 }
 

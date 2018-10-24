@@ -29,7 +29,6 @@ private:
 #if __MBED__
 #ifdef LT8920_USE_INT
   InterruptIn *_pin_pktflag;
-  void (*rxcb)();
 #else
   DigitalIn *_pin_pktflag;
 #endif
@@ -41,6 +40,7 @@ private:
   uint8_t _pin_reset;
 #endif
   uint8_t _channel;
+  void (*rxcb)();
 
 public:
   /** Construct a new instance
@@ -55,6 +55,7 @@ public:
 #ifdef LT8920_USE_INT
   void setRxCb(void (*rcb)())
   {
+    rxcb = rcb;
 #if __MBED__
     _pin_pktflag->rise(rcb);
 #else
