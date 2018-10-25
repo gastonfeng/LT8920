@@ -110,10 +110,10 @@ void LT8920::begin()
   writeRegister(5, 0x6637); //why does this differ from powerup (f000)
   writeRegister(8, 0x6c90); //power (default 71af) UNDOCUMENTED
 
-  setCurrentControl(4, 0); // power & gain.
+  setCurrentControl(0xf, 0xf); // power & gain.
 
   writeRegister(10, 0x7ffd); //bit 0: XTAL OSC enable
-  writeRegister(11, 0x0000); //bit 8: Power down RSSI (0=  RSSI operates normal)
+  writeRegister(11, 0x0008); //bit 8: Power down RSSI (0=  RSSI operates normal)
   writeRegister(12, 0x0000);
   writeRegister(13, 0x48bd); //(default 4855)
 
@@ -126,7 +126,7 @@ void LT8920::begin()
   writeRegister(28, 0x1800);
 
   //fedcba9876543210
-  writeRegister(32, 0x5000); //AAABBCCCDDEEFFFG  A preamble length, B, syncword length, c trailer length, d packet type
+  writeRegister(32, 0x4808); //AAABBCCCDDEEFFFG  A preamble length, B, syncword length, c trailer length, d packet type
   //                  E FEC_type, F BRCLK_SEL, G reserved
   //0x5000 = 0101 0000 0000 0000 = preamble 010 (3 bytes), B 10 (48 bits)
   writeRegister(33, 0x3fc7);
@@ -134,7 +134,7 @@ void LT8920::begin()
   writeRegister(35, 0x0300); //POWER mode,  bit 8/9 on = retransmit = 3x (default)
   setSyncWord(0x03805a5a03800380);
 
-  writeRegister(40, 0x4401); //max allowed error bits = 0 (01 = 0 error bits)
+  writeRegister(40, 0x4402); //max allowed error bits = 0 (01 = 0 error bits)
   writeRegister(R_PACKETCONFIG,
                 PACKETCONFIG_CRC_ON | PACKETCONFIG_AUTO_ACK | PACKETCONFIG_PKT_FIFO_POLARITY |
                     PACKETCONFIG_PACK_LEN_ENABLE |
@@ -143,7 +143,7 @@ void LT8920::begin()
   writeRegister(42, 0xfdb0);
   writeRegister(43, 0x000f);
 
-  //setDataRate(LT8920_1MBPS);
+  setDataRate(LT8920_62KBPS);
 
   writeRegister(R_FIFO, 0x0000); //TXRX_FIFO_REG (FIFO queue)
 
@@ -265,11 +265,11 @@ void LT8920::sleep()
 void LT8920::whatsUp(Stream &stream)
 {
   uint16_t mode = readRegister(R_CHANNEL);
-  stream.print("\nTx_EN=");
-  stream.println((mode & _BV(CHANNEL_TX_BIT)) != false);
-  stream.print("Rx_EN=");
-  stream.println((mode & _BV(CHANNEL_RX_BIT)) != false);
-  stream.print("Channel=");
+  stream.print("Tx_EN=");
+  stream.print((mode & _BV(CHANNEL_TX_BIT)) != false);
+  stream.print(" Rx_EN=");
+  stream.print((mode & _BV(CHANNEL_RX_BIT)) != false);
+  stream.print(" Channel=");
   stream.println(mode & CHANNEL_MASK);
 
   //read the status register.
@@ -282,20 +282,20 @@ void LT8920::whatsUp(Stream &stream)
   bool fifo_flag = state & _BV(5);
 
   stream.print("CRC=");
-  stream.println(crc_error);
-  stream.print("FEC=");
-  stream.println(fec23_error);
-  stream.print("FRAMER_ST=");
-  stream.println(framer_st);
-  stream.print("PKT=");
-  stream.println(pkt_flag);
-  stream.print("FIFO=");
+  stream.print(crc_error);
+  stream.print(" FEC=");
+  stream.print(fec23_error);
+  stream.print(" FRAMER_ST=");
+  stream.print(framer_st);
+  stream.print(" PKT=");
+  stream.print(pkt_flag);
+  stream.print(" FIFO=");
   stream.println(fifo_flag);
 
   uint16_t fifo = readRegister(R_FIFO_CONTROL);
   stream.print("FIFO_WR_PTR=");
-  stream.println((fifo >> 8) & 0b111111);
-  stream.print("FIFO_RD_PTR=");
+  stream.print((fifo >> 8) & 0b111111);
+  stream.print(" FIFO_RD_PTR=");
   stream.println(fifo & 0b111111);
 }
 
@@ -303,7 +303,7 @@ bool LT8920::available()
 {
   //read the PKT_FLAG state; this can also be done with a hard wire.
 
-  if (digitalRead(_pin_pktflag) != 0)
+  if (digitalRead(_pin_pktflag) != 1)
   {
     return true;
   }
