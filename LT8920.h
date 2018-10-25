@@ -57,9 +57,9 @@ public:
   {
     rxcb = rcb;
 #if __MBED__
-    _pin_pktflag->rise(rcb);
+    _pin_pktflag->falling(rcb);
 #else
-    attachInterrupt(_pin_pktflag, rcb, RISING);
+    attachInterrupt(_pin_pktflag, rcb, FALLING);
 #endif
   }
 #endif

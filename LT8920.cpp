@@ -4,7 +4,7 @@
 SPI spi(PA_7, PA_6, PA_5);
 #define transfer write
 #else
-#define spi SPI
+SPIClass spi(2);
 #endif
 
 #define REGISTER_READ 0b10000000  //bin
@@ -74,6 +74,9 @@ LT8920::LT8920(const int cs, const int pkt, const int rst)
   pinMode(_pin_chipselect, OUTPUT);
   pinMode(_pin_pktflag, INPUT);
   pinMode(_pin_reset, OUTPUT);
+#ifdef LT8920_USE_INT
+  attachInterrupt(_pin_pktflag, rxcb, FALLING);
+#endif
 #endif
   digitalWrite(_pin_chipselect, HIGH);
 }
@@ -262,12 +265,12 @@ void LT8920::sleep()
 void LT8920::whatsUp(Stream &stream)
 {
   uint16_t mode = readRegister(R_CHANNEL);
-  printf("\nTx_EN=");
-  printf("0x%x", (mode & _BV(CHANNEL_TX_BIT)) != false);
-  printf("Rx_EN=");
-  printf("0x%x", (mode & _BV(CHANNEL_RX_BIT)) != false);
-  printf("Channel=");
-  printf("0x%x", mode & CHANNEL_MASK);
+  stream.print("\nTx_EN=");
+  stream.println((mode & _BV(CHANNEL_TX_BIT)) != false);
+  stream.print("Rx_EN=");
+  stream.println((mode & _BV(CHANNEL_RX_BIT)) != false);
+  stream.print("Channel=");
+  stream.println(mode & CHANNEL_MASK);
 
   //read the status register.
   uint16_t state = readRegister(R_STATUS);
@@ -278,22 +281,22 @@ void LT8920::whatsUp(Stream &stream)
   bool pkt_flag = state & _BV(6);
   bool fifo_flag = state & _BV(5);
 
-  printf("CRC=");
-  printf("0x%x", crc_error);
-  printf("FEC=");
-  printf("0x%x", fec23_error);
-  printf("FRAMER_ST=");
-  printf("0x%x", framer_st);
-  printf("PKT=");
-  printf("0x%x", pkt_flag);
-  printf("FIFO=");
-  printf("0x%x", fifo_flag);
+  stream.print("CRC=");
+  stream.println(crc_error);
+  stream.print("FEC=");
+  stream.println(fec23_error);
+  stream.print("FRAMER_ST=");
+  stream.println(framer_st);
+  stream.print("PKT=");
+  stream.println(pkt_flag);
+  stream.print("FIFO=");
+  stream.println(fifo_flag);
 
   uint16_t fifo = readRegister(R_FIFO_CONTROL);
-  printf("FIFO_WR_PTR=");
-  printf("0x%x", (fifo >> 8) & 0b111111);
-  printf("FIFO_RD_PTR=");
-  printf("0x%x", fifo & 0b111111);
+  stream.print("FIFO_WR_PTR=");
+  stream.println((fifo >> 8) & 0b111111);
+  stream.print("FIFO_RD_PTR=");
+  stream.println(fifo & 0b111111);
 }
 
 bool LT8920::available()
@@ -344,10 +347,10 @@ int LT8920::read(uint8_t *buffer, size_t maxBuffer)
 void LT8920::startListening()
 {
   writeRegister(R_CHANNEL, _channel & CHANNEL_MASK); //turn off rx/tx
-  delay(3);
+  // delay(3);
   writeRegister(R_FIFO_CONTROL, 0x0080);                                     //flush rx
   writeRegister(R_CHANNEL, (_channel & CHANNEL_MASK) | _BV(CHANNEL_RX_BIT)); //enable RX
-  delay(5);
+  // delay(5);
 }
 
 /* set the BRCLK_SEL value */
@@ -373,8 +376,8 @@ bool LT8920::sendPacket(uint8_t *data, size_t packetSize)
 #else
   detachInterrupt(_pin_pktflag);
 #endif
-  writeRegister(R_CHANNEL, 0x0000);
-  writeRegister(R_FIFO_CONTROL, 0x8000); //flush tx
+  writeRegister(R_CHANNEL, _channel);
+  writeRegister(R_FIFO_CONTROL, 0x8080); //flush tx
 
   //packets are sent in 16bit words, and the first word will be the packet size.
   //start spitting out words until we are done.
@@ -392,7 +395,7 @@ bool LT8920::sendPacket(uint8_t *data, size_t packetSize)
   writeRegister(R_CHANNEL, (_channel & CHANNEL_MASK) | _BV(CHANNEL_TX_BIT)); //enable TX
 
   //Wait until the packet is sent.
-  while (digitalRead(_pin_pktflag) == 0)
+  while (digitalRead(_pin_pktflag) == 1)
   {
     //do nothing.
   }
@@ -400,7 +403,7 @@ bool LT8920::sendPacket(uint8_t *data, size_t packetSize)
 #if __MBED__
   _pin_pktflag->enable_irq();
 #else
-  attachInterrupt(_pin_pktflag, rxcb, RISING);
+  attachInterrupt(_pin_pktflag, rxcb, FALLING);
 #endif
   return true;
 }
