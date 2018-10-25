@@ -264,6 +264,7 @@ void LT8920::sleep()
 
 void LT8920::whatsUp(Stream &stream)
 {
+#if !__MBED__
   uint16_t mode = readRegister(R_CHANNEL);
   stream.print("Tx_EN=");
   stream.print((mode & _BV(CHANNEL_TX_BIT)) != false);
@@ -297,13 +298,17 @@ void LT8920::whatsUp(Stream &stream)
   stream.print((fifo >> 8) & 0b111111);
   stream.print(" FIFO_RD_PTR=");
   stream.println(fifo & 0b111111);
+#endif
 }
 
 bool LT8920::available()
 {
   //read the PKT_FLAG state; this can also be done with a hard wire.
-
+#if __MBED__
+  if (*_pin_pktflag != 1)
+#else
   if (digitalRead(_pin_pktflag) != 1)
+#endif
   {
     return true;
   }
@@ -394,8 +399,12 @@ bool LT8920::sendPacket(uint8_t *data, size_t packetSize)
 
   writeRegister(R_CHANNEL, (_channel & CHANNEL_MASK) | _BV(CHANNEL_TX_BIT)); //enable TX
 
-  //Wait until the packet is sent.
+//Wait until the packet is sent.
+#if __MBED__
+  while (*_pin_pktflag == 1)
+#else
   while (digitalRead(_pin_pktflag) == 1)
+#endif
   {
     //do nothing.
   }
