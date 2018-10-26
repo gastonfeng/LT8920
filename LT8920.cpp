@@ -137,8 +137,7 @@ void LT8920::begin()
   writeRegister(40, 0x4402); //max allowed error bits = 0 (01 = 0 error bits)
   writeRegister(R_PACKETCONFIG,
                 PACKETCONFIG_CRC_ON | PACKETCONFIG_AUTO_ACK | PACKETCONFIG_PKT_FIFO_POLARITY |
-                    PACKETCONFIG_PACK_LEN_ENABLE |
-                    PACKETCONFIG_FW_TERM_TX);
+                    PACKETCONFIG_PACK_LEN_ENABLE);
 
   writeRegister(42, 0xfdb0);
   writeRegister(43, 0x000f);
@@ -153,6 +152,7 @@ void LT8920::begin()
   writeRegister(R_CHANNEL, _BV(CHANNEL_TX_BIT)); //set TX mode.  (TX = bit 8, RX = bit 7, so RX would be 0x0080)
   delay(2);
   writeRegister(R_CHANNEL, _channel); // Frequency = 2402 + channel
+  startListening();
 }
 
 void LT8920::setChannel(uint8_t channel)
@@ -388,7 +388,8 @@ bool LT8920::sendPacket(uint8_t *data, size_t packetSize)
   {
     uint8_t msb = data[pos++];
     uint8_t lsb = data[pos++];
-
+    while (readRegister(R_STATUS) & _BV(5) == 0)
+      ;
     writeRegister2(R_FIFO, msb, lsb);
   }
 
@@ -399,12 +400,14 @@ bool LT8920::sendPacket(uint8_t *data, size_t packetSize)
   {
     //do nothing.
   }
+  writeRegister(R_CHANNEL, (_channel & CHANNEL_MASK));
   index++;
 #if __MBED__
   _pin_pktflag->enable_irq();
 #else
   attachInterrupt(_pin_pktflag, rxcb, FALLING);
 #endif
+  startListening();
   return true;
 }
 
