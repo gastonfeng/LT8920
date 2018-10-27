@@ -110,7 +110,7 @@ void LT8920::begin()
   writeRegister(5, 0x6637); //why does this differ from powerup (f000)
   writeRegister(8, 0x6c90); //power (default 71af) UNDOCUMENTED
 
-  setCurrentControl(0xf, 0xf); // power & gain.
+  setCurrentControl(0x4, 0x0); // power & gain.
 
   writeRegister(10, 0x7ffd); //bit 0: XTAL OSC enable
   writeRegister(11, 0x0008); //bit 8: Power down RSSI (0=  RSSI operates normal)
