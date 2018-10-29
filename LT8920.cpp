@@ -318,8 +318,10 @@ bool LT8920::available()
 
 int LT8920::read(uint8_t *buffer, size_t maxBuffer)
 {
-  uint16_t value = readRegister(R_STATUS);
-  if (bitRead(value, STATUS_CRC_BIT) == 0)
+  uint16_t len;
+  delay_us(1000);
+  uint16_t state = readRegister(R_STATUS);
+  if (bitRead(state, STATUS_CRC_BIT) == 0)
   {
     //CRC ok
 
