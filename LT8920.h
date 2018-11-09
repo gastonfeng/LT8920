@@ -8,7 +8,8 @@
 
 #ifndef LT8920_H
 #define LT8920_H
-#include <arduino.h>
+
+#include <Arduino.h>
 class LT8920
 {
 
