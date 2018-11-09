@@ -1,4 +1,4 @@
-#include <spi.h>
+#include <SPI.h>
 #include "LT8920.h"
 #if __MBED__
 SPI spi(PA_7, PA_6, PA_5);
