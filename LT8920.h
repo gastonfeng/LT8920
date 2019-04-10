@@ -25,6 +25,7 @@ public:
   };
   uint16_t id1, id2;
   int index;
+  char buf[64], len;
 
 private:
 #if __MBED__
@@ -167,6 +168,23 @@ public:
 
   /** retrieve the analog signal strength for the current channel */
   uint8_t getRSSI();
+  int availabled(void) { return len; }
+  size_t readBytes(char *buffer, size_t length)
+  {
+    size_t count = 0;
+    while (count < length)
+    {
+      int c = buf[count];
+      if (count >= len)
+        break;
+      *buffer++ = (char)c;
+      count++;
+    }
+    len=0;
+    return count;
+  }
+
 };
 
 #endif //LT8920_H
+extern LT8920 lt8920;

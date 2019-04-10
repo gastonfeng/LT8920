@@ -48,7 +48,7 @@ SPIClass spi(2);
 
 #define R_FIFO 50
 #define R_FIFO_CONTROL 52
-
+void default_rxcb();
 void LT8920::dump_register(uint8_t reg)
 {
   uint16_t r = readRegister(reg);
@@ -59,6 +59,7 @@ LT8920::LT8920(const int cs, const int pkt, const int rst)
 {
   index = 0;
   _channel = DEFAULT_CHANNEL;
+  rxcb=default_rxcb;
 #if __MBED__
   _pin_chipselect = (DigitalOut *)pinMode((PinName)cs, OUTPUT);
 #ifdef LT8920_USE_INT
@@ -473,3 +474,11 @@ void LT8920::scanRSSI(uint16_t *buffer, uint8_t start_channel, uint8_t num_chann
     buffer[pos++] = data >> 8;
   }
 }
+
+LT8920 lt8920(PB12, PC7, PC6);
+
+  void default_rxcb()
+  {
+    lt8920.len = lt8920.read((uint8_t *)lt8920.buf, 64);
+    lt8920.startListening();
+  }
